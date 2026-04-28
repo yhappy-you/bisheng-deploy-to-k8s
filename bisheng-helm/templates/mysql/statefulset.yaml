@@ -1,0 +1,74 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "mysql" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "mysql" "context" $) | nindent 4 }}
+spec:
+  serviceName: mysql
+  replicas: {{ .Values.mysql.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "bisheng.componentSelectorLabels" (dict "component" "mysql" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bisheng.componentSelectorLabels" (dict "component" "mysql" "context" $) | nindent 8 }}
+    spec:
+      containers:
+        - name: mysql
+          image: {{ include "bisheng.image" (dict "image" .Values.mysql.image "context" $) }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ .Values.mysql.auth.rootPassword | quote }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.auth.database | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+            - name: config
+              mountPath: /etc/mysql/my.cnf
+              subPath: my.cnf
+          resources:
+            {{- toYaml .Values.mysql.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "exit | mysql -u root -p$MYSQL_ROOT_PASSWORD"
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 4
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "exit | mysql -u root -p$MYSQL_ROOT_PASSWORD"
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 4
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "bisheng.componentFullname" (dict "component" "mysql" "context" $) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- include "bisheng.storageClass" . | nindent 8 }}
+        resources:
+          requests:
+            storage: {{ .Values.mysql.persistence.size }}
+{{- end }}

@@ -1,0 +1,14 @@
+{{- if .Values.redis.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "redis" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "redis" "context" $) | nindent 4 }}
+data:
+  redis.conf: |
+    port 6379
+    bind 0.0.0.0
+    protected-mode no
+    appendonly yes
+{{- end }}

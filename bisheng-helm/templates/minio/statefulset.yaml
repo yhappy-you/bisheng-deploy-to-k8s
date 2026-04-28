@@ -1,0 +1,68 @@
+{{- if .Values.minio.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "minio" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "minio" "context" $) | nindent 4 }}
+spec:
+  serviceName: minio
+  replicas: {{ .Values.minio.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "bisheng.componentSelectorLabels" (dict "component" "minio" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bisheng.componentSelectorLabels" (dict "component" "minio" "context" $) | nindent 8 }}
+    spec:
+      containers:
+        - name: minio
+          image: {{ include "bisheng.image" (dict "image" .Values.minio.image "context" $) }}
+          command: ["minio", "server", "/minio_data", "--console-address", ":9001"]
+          env:
+            - name: MINIO_ACCESS_KEY
+              value: {{ .Values.minio.auth.accessKey | quote }}
+            - name: MINIO_SECRET_KEY
+              value: {{ .Values.minio.auth.secretKey | quote }}
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - name: api
+              containerPort: 9000
+              protocol: TCP
+            - name: console
+              containerPort: 9001
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /minio_data
+          resources:
+            {{- toYaml .Values.minio.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 3
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- include "bisheng.storageClass" . | nindent 8 }}
+        resources:
+          requests:
+            storage: {{ .Values.minio.persistence.size }}
+{{- end }}

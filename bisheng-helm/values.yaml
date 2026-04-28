@@ -1,0 +1,145 @@
+global:
+  imageRegistry: ""
+  storageClass: ""
+  timezone: Asia/Shanghai
+
+ingress:
+  enabled: true
+  className: ""
+  host: bisheng.example.com
+  annotations: {}
+  tls: {}
+
+mysql:
+  enabled: true
+  image: mysql:8.0
+  replicaCount: 1
+  auth:
+    rootPassword: ""
+    database: bisheng
+  persistence:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+redis:
+  enabled: true
+  image: redis:7.0.4
+  replicaCount: 1
+  persistence:
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+elasticsearch:
+  enabled: true
+  image: bitnamilegacy/elasticsearch:8.12.0
+  replicaCount: 1
+  persistence:
+    size: 30Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+minio:
+  enabled: true
+  image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+  replicaCount: 1
+  auth:
+    accessKey: minioadmin
+    secretKey: minioadmin
+  persistence:
+    size: 50Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+milvus:
+  enabled: true
+  image: milvusdb/milvus:v2.5.10
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    persistence:
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+  persistence:
+    size: 30Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+backend:
+  image: dataelement/bisheng-backend:v2.4.0-beta1-fix
+  replicaCount: 1
+  persistence:
+    size: 10Gi
+  config:
+    logLevel: INFO
+  env:
+    milvusConnectionArgs: '{"host":"milvus","port":"19530","user":"","password":"","secure":false}'
+    milvusIsPartition: "true"
+    milvusPartitionSuffix: "1"
+    elasticsearchUrl: "http://elasticsearch:9200"
+    elasticsearchSslVerify: "{}"
+    minioSchema: "false"
+    minioCertCheck: "false"
+    minioEndpoint: "minio:9000"
+    minioSharepoint: "minio:9000"
+    minioAccessKey: minioadmin
+    minioSecretKey: minioadmin
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+worker:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+frontend:
+  image: dataelement/bisheng-frontend:v2.4.0-beta1-fix
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

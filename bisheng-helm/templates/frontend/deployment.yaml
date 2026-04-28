@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "frontend" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "frontend" "context" $) | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "bisheng.componentSelectorLabels" (dict "component" "frontend" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bisheng.componentSelectorLabels" (dict "component" "frontend" "context" $) | nindent 8 }}
+    spec:
+      containers:
+        - name: frontend
+          image: {{ include "bisheng.image" (dict "image" .Values.frontend.image "context" $) }}
+          env:
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+            - name: websocket
+              containerPort: 8443
+              protocol: TCP
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/websocket.conf
+              subPath: websocket.conf
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "bisheng.componentFullname" (dict "component" "frontend" "context" $) }}

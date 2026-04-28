@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "worker" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "worker" "context" $) | nindent 4 }}
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "bisheng.componentSelectorLabels" (dict "component" "worker" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bisheng.componentSelectorLabels" (dict "component" "worker" "context" $) | nindent 8 }}
+    spec:
+      containers:
+        - name: worker
+          image: {{ include "bisheng.image" (dict "image" .Values.backend.image "context" $) }}
+          command: ["sh", "/app/entrypoint.sh", "worker"]
+          env:
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+            - name: BS_MILVUS_CONNECTION_ARGS
+              value: {{ .Values.backend.env.milvusConnectionArgs | quote }}
+            - name: BS_MILVUS_IS_PARTITION
+              value: {{ .Values.backend.env.milvusIsPartition | quote }}
+            - name: BS_MILVUS_PARTITION_SUFFIX
+              value: {{ .Values.backend.env.milvusPartitionSuffix | quote }}
+            - name: BS_ELASTICSEARCH_URL
+              value: {{ .Values.backend.env.elasticsearchUrl | quote }}
+            - name: BS_ELASTICSEARCH_SSL_VERIFY
+              value: {{ .Values.backend.env.elasticsearchSslVerify | quote }}
+            - name: BS_MINIO_SCHEMA
+              value: {{ .Values.backend.env.minioSchema | quote }}
+            - name: BS_MINIO_CERT_CHECK
+              value: {{ .Values.backend.env.minioCertCheck | quote }}
+            - name: BS_MINIO_ENDPOINT
+              value: {{ .Values.backend.env.minioEndpoint | quote }}
+            - name: BS_MINIO_SHAREPOINT
+              value: {{ .Values.backend.env.minioSharepoint | quote }}
+            - name: BS_MINIO_ACCESS_KEY
+              value: {{ .Values.backend.env.minioAccessKey | quote }}
+            - name: BS_MINIO_SECRET_KEY
+              value: {{ .Values.backend.env.minioSecretKey | quote }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: config
+              mountPath: /app/bisheng/config.yaml
+              subPath: config.yaml
+            - name: config
+              mountPath: /app/entrypoint.sh
+              subPath: entrypoint.sh
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "bisheng.componentFullname" (dict "component" "backend" "context" $) }}
+        - name: config
+          configMap:
+            name: {{ include "bisheng.componentFullname" (dict "component" "backend" "context" $) }}
+            defaultMode: 0755

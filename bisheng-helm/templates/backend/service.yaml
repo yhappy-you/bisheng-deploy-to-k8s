@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "backend" "context" $) | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7860
+      targetPort: 7860
+      protocol: TCP
+  selector:
+    {{- include "bisheng.componentSelectorLabels" (dict "component" "backend" "context" $) | nindent 4 }}

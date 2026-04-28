@@ -1,0 +1,29 @@
+# Production deployment example for Bisheng
+# Usage: helm install bisheng ./bisheng-helm -f examples/values-production.yaml -n bisheng
+#
+# NOTE: Modify the values below to match your environment before deploying.
+
+global:
+  # Set a Docker mirror registry prefix if needed (e.g., docker.m.daocloud.io, docker.1ms.run)
+  imageRegistry: ""
+  # Set to your cluster's StorageClass name (e.g., rook-ceph-block, standard, nfs-client)
+  storageClass: ""
+  timezone: Asia/Shanghai
+
+ingress:
+  enabled: true
+  className: traefik
+  host: bisheng.example.com
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+
+mysql:
+  enabled: true
+  auth:
+    rootPassword: "CHANGE_ME"
+    database: bisheng
+
+minio:
+  auth:
+    accessKey: minioadmin
+    secretKey: minioadmin

@@ -1,0 +1,61 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "milvus" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "milvus" "context" $) | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "bisheng.componentSelectorLabels" (dict "component" "milvus" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bisheng.componentSelectorLabels" (dict "component" "milvus" "context" $) | nindent 8 }}
+    spec:
+      containers:
+        - name: milvus
+          image: {{ include "bisheng.image" (dict "image" .Values.milvus.image "context" $) }}
+          command: ["milvus", "run", "standalone"]
+          env:
+            - name: ETCD_ENDPOINTS
+              value: milvus-etcd:2379
+            - name: MINIO_ADDRESS
+              value: minio:9000
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - name: grpc
+              containerPort: 19530
+              protocol: TCP
+            - name: metrics
+              containerPort: 9091
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/milvus
+          resources:
+            {{- toYaml .Values.milvus.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9091
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 9091
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 3
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "bisheng.componentFullname" (dict "component" "milvus" "context" $) }}
+{{- end }}

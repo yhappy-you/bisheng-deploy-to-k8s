@@ -1,0 +1,16 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus-etcd
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "milvus-etcd" "context" $) | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 2379
+      targetPort: 2379
+      protocol: TCP
+  selector:
+    {{- include "bisheng.componentSelectorLabels" (dict "component" "milvus-etcd" "context" $) | nindent 4 }}
+{{- end }}

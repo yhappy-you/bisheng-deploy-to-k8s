@@ -1,0 +1,78 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "milvus-etcd" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "milvus-etcd" "context" $) | nindent 4 }}
+spec:
+  serviceName: milvus-etcd
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "bisheng.componentSelectorLabels" (dict "component" "milvus-etcd" "context" $) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bisheng.componentSelectorLabels" (dict "component" "milvus-etcd" "context" $) | nindent 8 }}
+    spec:
+      containers:
+        - name: etcd
+          image: {{ include "bisheng.image" (dict "image" .Values.milvus.etcd.image "context" $) }}
+          command:
+            - etcd
+            - -advertise-client-urls=http://127.0.0.1:2379
+            - -listen-client-urls
+            - http://0.0.0.0:2379
+            - --data-dir
+            - /etcd
+          env:
+            - name: ETCD_AUTO_COMPACTION_MODE
+              value: revision
+            - name: ETCD_AUTO_COMPACTION_RETENTION
+              value: "1000"
+            - name: ETCD_QUOTA_BACKEND_BYTES
+              value: "4294967296"
+            - name: ETCD_SNAPSHOT_COUNT
+              value: "50000"
+            - name: TZ
+              value: {{ .Values.global.timezone | quote }}
+          ports:
+            - containerPort: 2379
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /etcd
+          resources:
+            {{- toYaml .Values.milvus.etcd.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - etcdctl
+                - endpoint
+                - health
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - etcdctl
+                - endpoint
+                - health
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 20
+            failureThreshold: 3
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        {{- include "bisheng.storageClass" . | nindent 8 }}
+        resources:
+          requests:
+            storage: {{ .Values.milvus.etcd.persistence.size }}
+{{- end }}

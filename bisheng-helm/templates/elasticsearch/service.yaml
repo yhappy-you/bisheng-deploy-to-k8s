@@ -1,0 +1,21 @@
+{{- if .Values.elasticsearch.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "elasticsearch" "context" $) | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+      protocol: TCP
+    - name: transport
+      port: 9300
+      targetPort: 9300
+      protocol: TCP
+  selector:
+    {{- include "bisheng.componentSelectorLabels" (dict "component" "elasticsearch" "context" $) | nindent 4 }}
+{{- end }}

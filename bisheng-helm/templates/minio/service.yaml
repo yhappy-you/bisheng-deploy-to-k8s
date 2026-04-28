@@ -1,0 +1,21 @@
+{{- if .Values.minio.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "minio" "context" $) | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: api
+      port: 9000
+      targetPort: 9000
+      protocol: TCP
+    - name: console
+      port: 9001
+      targetPort: 9001
+      protocol: TCP
+  selector:
+    {{- include "bisheng.componentSelectorLabels" (dict "component" "minio" "context" $) | nindent 4 }}
+{{- end }}

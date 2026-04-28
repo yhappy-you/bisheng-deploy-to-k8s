@@ -1,0 +1,9 @@
+apiVersion: v2
+name: bisheng
+description: Bisheng - Low-code LLM application platform
+type: application
+version: 0.1.0
+appVersion: "v2.4.0-beta1-fix"
+maintainers:
+  - name: bisheng
+    email: bisheng@example.com

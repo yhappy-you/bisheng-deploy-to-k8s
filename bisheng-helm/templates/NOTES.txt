@@ -1,0 +1,31 @@
+Bisheng has been deployed successfully!
+
+{{- if .Values.ingress.enabled }}
+
+Access the application at:
+  http{{ if .Values.ingress.tls }}s{{ end }}://{{ .Values.ingress.host }}
+
+{{- end }}
+
+Services:
+  MySQL:          mysql:3306
+  Redis:          redis:6379
+  Elasticsearch:  elasticsearch:9200
+  MinIO:          minio:9000 (API), minio:9001 (Console)
+  Milvus:         milvus:19530 (gRPC), milvus:9091 (metrics)
+  Backend API:    backend:7860
+  Frontend:       frontend:3001
+  WebSocket:      frontend:8443
+
+{{- if not .Values.mysql.auth.rootPassword }}
+
+WARNING: MySQL root password is not set!
+Set mysql.auth.rootPassword in your values file.
+
+{{- end }}
+
+To check the status of all pods:
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+
+To check Ingress status:
+  kubectl get ingress {{ include "bisheng.fullname" . }}

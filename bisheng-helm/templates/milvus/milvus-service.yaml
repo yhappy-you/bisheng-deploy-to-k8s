@@ -1,0 +1,21 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: milvus
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "milvus" "context" $) | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: grpc
+      port: 19530
+      targetPort: 19530
+      protocol: TCP
+    - name: metrics
+      port: 9091
+      targetPort: 9091
+      protocol: TCP
+  selector:
+    {{- include "bisheng.componentSelectorLabels" (dict "component" "milvus" "context" $) | nindent 4 }}
+{{- end }}

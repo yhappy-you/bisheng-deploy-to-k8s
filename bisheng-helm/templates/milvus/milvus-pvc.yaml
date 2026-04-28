@@ -1,0 +1,15 @@
+{{- if .Values.milvus.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bisheng.componentFullname" (dict "component" "milvus" "context" $) }}
+  labels:
+    {{- include "bisheng.componentLabels" (dict "component" "milvus" "context" $) | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- include "bisheng.storageClass" . | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ .Values.milvus.persistence.size }}
+{{- end }}
